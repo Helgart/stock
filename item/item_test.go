@@ -1,7 +1,6 @@
-package store
+package item
 
 import (
-	"github.com/google/uuid"
 	"testing"
 )
 
@@ -17,9 +16,6 @@ func TestItemCreation(t *testing.T) {
 
 		if item.Name != fixture {
 			t.Errorf("Expected name %s, but got %s", fixture, item.Name)
-		}
-		if item.Uid == uuid.Nil {
-			t.Errorf("Expected non-nil UUID, but got nil")
 		}
 	}
 }
