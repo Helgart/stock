@@ -2,26 +2,31 @@ package assignment
 
 import (
 	"stock.ngmengineering.fr/stock/item"
-	"stock.ngmengineering.fr/stock/store"
 	"testing"
 )
 
 func TestAssignmentCreation(t *testing.T) {
 	tests := []struct {
-		item     item.Item
-		store    store.Store
+		itemName string
 		unit     Unit
 		quantity Quantity
 	}{
-		{item.NewItem("pasta"), store.NewStore("cupboard"), "box", 1},
-		{item.NewItem("rice"), store.NewStore("cupboard"), "gram", 500},
+		{"pasta", "box", 1},
+		{"rice", "gram", 500},
 	}
 
 	for _, fixture := range tests {
-		itemAssignment := NewAssignment(fixture.item, fixture.store, fixture.unit, fixture.quantity)
+		itemToAssign, err := item.NewItem(fixture.itemName)
 
-		if itemAssignment.Item != fixture.item {
-			t.Errorf("Expected name %s, but got %s", fixture.item.Name, itemAssignment.Item.Name)
+		if err != nil {
+			t.Errorf("Error creating item: %v", err)
+			continue
+		}
+
+		itemAssignment := NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
+
+		if itemAssignment.Item != itemToAssign {
+			t.Errorf("Expected name %v, but got %v", itemToAssign, itemAssignment.Item)
 		}
 		if itemAssignment.Unit != fixture.unit {
 			t.Errorf("Expected unit %s, but got %s", fixture.unit, itemAssignment.Unit)
@@ -30,8 +35,4 @@ func TestAssignmentCreation(t *testing.T) {
 			t.Errorf("Expected quantity %d, but got %d", fixture.quantity, itemAssignment.Quantity)
 		}
 	}
-}
-
-func NewValidAssignmentFixture(quantity Quantity) Assignment {
-	return NewAssignment(item.NewItem("pasta"), store.NewStore("cupboard"), "box", quantity)
 }

@@ -1,13 +1,11 @@
 package assignment
 
 type Uptake struct {
-	Assignment Assignment
-	Quantity   Quantity
+	Quantity Quantity
 }
 
-func NewUptake(assignment Assignment, quantity Quantity) Uptake {
+func NewUptake(quantity Quantity) Uptake {
 	return Uptake{
-		Assignment: assignment,
-		Quantity:   quantity,
+		Quantity: quantity,
 	}
 }
