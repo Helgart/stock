@@ -56,3 +56,36 @@ func (store *Store) GetAvailableQuantityForItem(item item.Item) assignment.Quant
 
 	return availableQuantity
 }
+
+// Uptake updates the store by taking a certain quantity of an item.
+// If the available quantity is less than the requested quantity, it returns an error indicating the insufficient quantity.
+func (store *Store) Uptake(item item.Item, quantity assignment.Quantity) (assignment.Quantity, error) {
+	availableQuantity := store.GetAvailableQuantityForItem(item)
+
+	if availableQuantity < quantity {
+		return 0, assignment.NotEnoughQuantity{Available: availableQuantity, Wanted: quantity}
+	}
+
+	assignments := store.Assignments[item.Uid]
+	nbAssignments := len(assignments)
+	remainingQuantityToUptake := quantity
+
+	for index := 0; index < nbAssignments && remainingQuantityToUptake > 0; index++ {
+		availableQuantityForAssignment := assignments[index].GetAvailableQuantity()
+		quantityToUptake := remainingQuantityToUptake
+
+		if availableQuantityForAssignment < quantityToUptake {
+			quantityToUptake = availableQuantityForAssignment
+		}
+
+		_, err := assignments[index].Uptake(quantityToUptake)
+
+		if err != nil {
+			return store.GetAvailableQuantityForItem(item), err
+		}
+
+		remainingQuantityToUptake -= quantityToUptake
+	}
+
+	return store.GetAvailableQuantityForItem(item), nil
+}
