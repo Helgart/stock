@@ -1,4 +1,4 @@
-module stock.ngmengineering.fr/stock
+module github.com/Helgart/stock
 
 go 1.22.1
 
