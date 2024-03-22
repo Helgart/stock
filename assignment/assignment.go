@@ -2,7 +2,7 @@ package assignment
 
 import (
 	"fmt"
-	"stock.ngmengineering.fr/stock/item"
+	"github.com/Helgart/stock/item"
 )
 
 // notEnoughQuantityErrorMessage is a constant string used as an error message when a quantity is not sufficient.

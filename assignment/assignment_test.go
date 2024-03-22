@@ -1,7 +1,7 @@
 package assignment
 
 import (
-	"stock.ngmengineering.fr/stock/item"
+	"github.com/Helgart/stock/item"
 	"testing"
 )
 

@@ -1,9 +1,9 @@
 package store
 
 import (
+	"github.com/Helgart/stock/assignment"
+	"github.com/Helgart/stock/item"
 	"github.com/google/uuid"
-	"stock.ngmengineering.fr/stock/assignment"
-	"stock.ngmengineering.fr/stock/item"
 )
 
 // Store is a type representing a store that holds assignments of items.

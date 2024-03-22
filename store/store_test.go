@@ -1,8 +1,8 @@
 package store
 
 import (
-	"stock.ngmengineering.fr/stock/assignment"
-	"stock.ngmengineering.fr/stock/item"
+	"github.com/Helgart/stock/assignment"
+	"github.com/Helgart/stock/item"
 	"testing"
 )
 
