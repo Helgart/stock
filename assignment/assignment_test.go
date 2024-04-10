@@ -1,113 +1,105 @@
-package assignment
+package assignment_test
 
 import (
+	"github.com/Helgart/stock/assignment"
 	"github.com/Helgart/stock/item"
+	"github.com/stretchr/testify/suite"
 	"testing"
 )
 
-func TestAssignmentCreation(t *testing.T) {
+type assignmentTestSuite struct {
+	suite.Suite
+}
+
+func TestAssignmentTestSuite(t *testing.T) {
+	suite.Run(t, new(assignmentTestSuite))
+}
+
+func (s *assignmentTestSuite) TestAssignment_Creation() {
 	tests := []struct {
+		name     string
 		itemName string
-		unit     Unit
-		quantity Quantity
+		unit     assignment.Unit
+		quantity assignment.Quantity
 	}{
-		{"pasta", "box", 1},
-		{"rice", "gram", 500},
+		{"smallQuantity", "pasta", "box", 1},
+		{"biggerQuantity", "rice", "gram", 500},
 	}
 
 	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem(fixture.itemName)
+		s.Run(fixture.name, func() {
+			itemToAssign, err := item.NewItem(fixture.itemName)
+			itemAssignment := assignment.NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
 
-		if err != nil {
-			t.Errorf("Error creating item: %v", err)
-			continue
-		}
-
-		itemAssignment := NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
-
-		if itemAssignment.Item != itemToAssign {
-			t.Errorf("Expected name %v, but got %v", itemToAssign, itemAssignment.Item)
-		}
-		if itemAssignment.Unit != fixture.unit {
-			t.Errorf("Expected unit %s, but got %s", fixture.unit, itemAssignment.Unit)
-		}
-		if itemAssignment.Quantity != fixture.quantity {
-			t.Errorf("Expected quantity %d, but got %d", fixture.quantity, itemAssignment.Quantity)
-		}
+			s.Require().NoError(err)
+			s.Equal(itemToAssign, itemAssignment.Item)
+			s.Equal(fixture.unit, itemAssignment.Unit)
+			s.Equal(fixture.quantity, itemAssignment.Quantity)
+		})
 	}
 }
 
-func TestAssignment_GetAvailableQuantity(t *testing.T) {
+func (s *assignmentTestSuite) TestAssignment_GetAvailableQuantity() {
 	tests := []struct {
+		name     string
 		itemName string
-		unit     Unit
-		quantity Quantity
-		uptake   Quantity
+		unit     assignment.Unit
+		quantity assignment.Quantity
+		uptake   assignment.Quantity
 	}{
-		{"pasta", "box", 1, 1},
-		{"rice", "gram", 500, 250},
+		{"uptakeAll", "pasta", "box", 1, 1},
+		{"uptakeHalf", "rice", "gram", 500, 250},
 	}
 
 	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem(fixture.itemName)
+		s.Run(fixture.name, func() {
+			itemToAssign, err := item.NewItem(fixture.itemName)
 
-		if err != nil {
-			t.Errorf("Error creating item: %v", err)
-			continue
-		}
+			s.Require().NoError(err)
 
-		itemAssignment := NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
-		itemUptake := NewUptake(fixture.uptake)
+			itemAssignment := assignment.NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
+			itemUptake := assignment.NewUptake(fixture.uptake)
 
-		itemAssignment.Uptakes = append(itemAssignment.Uptakes, itemUptake)
+			itemAssignment.Uptakes = append(itemAssignment.Uptakes, itemUptake)
 
-		currentQuantity := itemAssignment.GetAvailableQuantity()
-		expectedQuantity := fixture.quantity - fixture.uptake
+			currentQuantity := itemAssignment.GetAvailableQuantity()
+			expectedQuantity := fixture.quantity - fixture.uptake
 
-		if currentQuantity != fixture.quantity-fixture.uptake {
-			t.Errorf("Expected %d quantity after uptake, obtained %d", expectedQuantity, currentQuantity)
-		}
+			s.Equal(expectedQuantity, currentQuantity)
+		})
 	}
 }
 
-func TestAssignment_Uptake(t *testing.T) {
+func (s *assignmentTestSuite) TestAssignment_Uptake() {
 	tests := []struct {
+		name     string
 		itemName string
-		unit     Unit
-		quantity Quantity
-		uptake   Quantity
+		unit     assignment.Unit
+		quantity assignment.Quantity
+		uptake   assignment.Quantity
 	}{
-		{"pasta", "box", 1, 1},
-		{"rice", "gram", 500, 250},
-		{"floor", "gram", 1000, 1200},
+		{"uptakeAll", "pasta", "box", 1, 1},
+		{"uptakeHalf", "rice", "gram", 500, 250},
+		{"uptakeMoreThanAvailable", "floor", "gram", 1000, 1200},
 	}
 
 	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem(fixture.itemName)
+		s.Run(fixture.name, func() {
+			itemToAssign, err := item.NewItem(fixture.itemName)
 
-		if err != nil {
-			t.Errorf("Error creating item: %v", err)
-			continue
-		}
+			s.Require().NoError(err)
 
-		itemAssignment := NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
+			itemAssignment := assignment.NewAssignment(itemToAssign, fixture.unit, fixture.quantity)
 
-		currentQuantity, err := itemAssignment.Uptake(fixture.uptake)
+			currentQuantity, err := itemAssignment.Uptake(fixture.uptake)
 
-		if fixture.uptake > fixture.quantity && err == nil {
-			t.Errorf("Expected error after uptake, none obtained")
-		}
-		if fixture.uptake > fixture.quantity && err != nil {
-			if _, isValid := err.(NotEnoughQuantity); !isValid {
-				t.Errorf("Expected NotEnoughQuantity error after uptake, %T obtained", err)
+			if fixture.uptake > fixture.quantity {
+				s.Require().Error(err)
+				s.IsType(&assignment.ErrorNotEnoughQuantity{}, err)
+			} else {
+				s.Require().NoError(err)
+				s.Equal(fixture.quantity-fixture.uptake, currentQuantity)
 			}
-		}
-		if fixture.uptake <= fixture.quantity && currentQuantity != fixture.quantity-fixture.uptake {
-			t.Errorf(
-				"Expected %d quantity after uptake, obtained %d",
-				fixture.quantity-fixture.uptake,
-				currentQuantity,
-			)
-		}
+		})
 	}
 }

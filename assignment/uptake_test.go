@@ -1,15 +1,32 @@
-package assignment
+package assignment_test
 
-import "testing"
+import (
+	"github.com/Helgart/stock/assignment"
+	"github.com/stretchr/testify/suite"
+	"testing"
+)
 
-func TestUptakeCreation(t *testing.T) {
-	tests := []Quantity{5, 1}
+type uptakeTestSuite struct {
+	suite.Suite
+}
 
-	for _, quantity := range tests {
-		uptake := NewUptake(quantity)
+func TestUptakeTestSuite(t *testing.T) {
+	suite.Run(t, new(uptakeTestSuite))
+}
 
-		if uptake.Quantity != quantity {
-			t.Errorf("Expected quantity %d, but got %d", quantity, uptake.Quantity)
-		}
+func (s *uptakeTestSuite) TestUptakeCreation() {
+	tests := []struct {
+		name     string
+		quantity assignment.Quantity
+	}{
+		{"quantity", 5},
+		{"smallQuantity", 1},
+	}
+
+	for _, test := range tests {
+		s.Run(test.name, func() {
+			uptake := assignment.NewUptake(test.quantity)
+			s.Equal(test.quantity, uptake.Quantity)
+		})
 	}
 }

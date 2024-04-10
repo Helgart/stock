@@ -6,8 +6,8 @@ type Uptake struct {
 }
 
 // NewUptake creates a new Uptake with the specified quantity.
-func NewUptake(quantity Quantity) Uptake {
-	return Uptake{
+func NewUptake(quantity Quantity) *Uptake {
+	return &Uptake{
 		Quantity: quantity,
 	}
 }

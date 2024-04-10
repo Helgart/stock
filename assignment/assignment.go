@@ -10,7 +10,7 @@ import (
 // Example usage:
 // ```go
 //
-//	func (notEnoughQuantity NotEnoughQuantity) Error() string {
+//	func (notEnoughQuantity ErrorNotEnoughQuantity) Error() string {
 //		return fmt.Sprintf(notEnoughQuantityErrorMessage, notEnoughQuantity.Available, notEnoughQuantity.Wanted)
 //	}
 //
@@ -22,35 +22,35 @@ const notEnoughQuantityErrorMessage = "Not enough quantity. Available: %d, Wante
 type Unit string
 
 // Quantity represents a numerical value used for measuring a certain quantity in the context of an Assignment.
-type Quantity uint
+type Quantity int
 
 // Assignment represents an assignment of an item, along with its unit, quantity, and uptakes.
 type Assignment struct {
-	Item     item.Item
+	Item     *item.Item
 	Unit     Unit
 	Quantity Quantity
-	Uptakes  []Uptake
+	Uptakes  []*Uptake
 }
 
-// NotEnoughQuantity represents an error indicating that there is not enough quantity available for a specific operation.
-type NotEnoughQuantity struct {
+// ErrorNotEnoughQuantity represents an error indicating that there is not enough quantity available for a specific operation.
+type ErrorNotEnoughQuantity struct {
 	Available Quantity
 	Wanted    Quantity
 }
 
-// Error returns the error message for the NotEnoughQuantity error type.
+// Error returns the error message for the ErrorNotEnoughQuantity error type.
 // It formats the error message using the values of the Available and Wanted properties.
-func (notEnoughQuantity NotEnoughQuantity) Error() string {
-	return fmt.Sprintf(notEnoughQuantityErrorMessage, notEnoughQuantity.Available, notEnoughQuantity.Wanted)
+func (errorNotEnoughQuantity ErrorNotEnoughQuantity) Error() string {
+	return fmt.Sprintf(notEnoughQuantityErrorMessage, errorNotEnoughQuantity.Available, errorNotEnoughQuantity.Wanted)
 }
 
 // NewAssignment creates a new Assignment with the specified item, unit, and quantity.
 func NewAssignment(
-	item item.Item,
+	item *item.Item,
 	unit Unit,
 	quantity Quantity,
-) Assignment {
-	return Assignment{
+) *Assignment {
+	return &Assignment{
 		Item:     item,
 		Unit:     unit,
 		Quantity: quantity,
@@ -81,12 +81,12 @@ func (assignment *Assignment) GetAvailableQuantity() Quantity {
 }
 
 // Uptake updates the Assignment by subtracting the given quantity from the available quantity.
-// If the available quantity is less than the given quantity, it returns a NotEnoughQuantity error.
+// If the available quantity is less than the given quantity, it returns a ErrorNotEnoughQuantity error.
 func (assignment *Assignment) Uptake(quantity Quantity) (Quantity, error) {
 	availableQuantity := assignment.GetAvailableQuantity()
 
 	if availableQuantity < quantity {
-		return 0, NotEnoughQuantity{availableQuantity, quantity}
+		return 0, &ErrorNotEnoughQuantity{availableQuantity, quantity}
 	}
 
 	assignment.Uptakes = append(assignment.Uptakes, NewUptake(quantity))

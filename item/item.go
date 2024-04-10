@@ -12,16 +12,12 @@ type Item struct {
 
 // NewItem creates a new item with a unique identifier and the given name.
 // Returns the new item and an error, if there was an error generating the unique identifier.
-func NewItem(name string) (Item, error) {
+func NewItem(name string) (*Item, error) {
 	uid, err := uuid.NewV7()
 
 	if err != nil {
-		return Item{}, err
+		return nil, err
 	}
 
-	return Item{
-			Uid:  uid,
-			Name: name,
-		},
-		err
+	return &Item{Uid: uid, Name: name}, err
 }

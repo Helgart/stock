@@ -1,12 +1,22 @@
-package store
+package store_test
 
 import (
 	"github.com/Helgart/stock/assignment"
 	"github.com/Helgart/stock/item"
+	"github.com/Helgart/stock/store"
+	"github.com/stretchr/testify/suite"
 	"testing"
 )
 
-func TestStoreCreation(t *testing.T) {
+type storeTestSuite struct {
+	suite.Suite
+}
+
+func TestStoreTestSuite(t *testing.T) {
+	suite.Run(t, new(storeTestSuite))
+}
+
+func (s *storeTestSuite) TestStore_Creation() {
 	tests := []string{
 		"fridge",
 		"box",
@@ -14,19 +24,17 @@ func TestStoreCreation(t *testing.T) {
 	}
 
 	for _, fixture := range tests {
-		store := NewStore(fixture)
+		s.Run(fixture, func() {
+			storeFixture := store.NewStore(fixture)
 
-		if store.Name != fixture {
-			t.Errorf("Expected name %s, but got %s", fixture, store.Name)
-		}
-		if len(store.Assignments) != 0 {
-			t.Errorf("Expected empty assignments, but got %d assignments", len(store.Assignments))
-		}
+			s.Equal(fixture, storeFixture.Name)
+			s.Empty(storeFixture.Assignments)
+		})
 	}
 }
 
-func TestStore_AssignItem(t *testing.T) {
-	store := NewStore("fridge")
+func (s *storeTestSuite) TestStore_AssignItem() {
+	storeFixture := store.NewStore("fridge")
 	tests := []struct {
 		itemName string
 		unit     assignment.Unit
@@ -37,35 +45,26 @@ func TestStore_AssignItem(t *testing.T) {
 	}
 	expectedLength := 1
 
-	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem(fixture.itemName)
+	for _, test := range tests {
+		s.Run(test.itemName, func() {
+			itemToAssign, err := item.NewItem(test.itemName)
 
-		if err != nil {
-			t.Errorf("Expected no error on item creation, but got %s error", err.Error())
-		}
+			s.Require().NoError(err)
 
-		currentAssignment := store.AssignItem(itemToAssign, fixture.unit, fixture.quantity)
-		nbAssignedItems := len(store.Assignments)
+			currentAssignment := storeFixture.AssignItem(itemToAssign, test.unit, test.quantity)
 
-		if nbAssignedItems != expectedLength {
-			t.Errorf("Expected %d assigned items, but got %d assignments", expectedLength, nbAssignedItems)
-		}
-		if currentAssignment.Item != itemToAssign {
-			t.Errorf("Expected item %v, but got %v", itemToAssign, currentAssignment)
-		}
-		if currentAssignment.Quantity != fixture.quantity {
-			t.Errorf("Expected quantity %d, but got %d", fixture.quantity, currentAssignment.Quantity)
-		}
-		if currentAssignment.Unit != fixture.unit {
-			t.Errorf("Expected unit %s, but got %s", fixture.unit, currentAssignment.Unit)
-		}
+			s.Len(storeFixture.Assignments, expectedLength)
+			s.Equal(currentAssignment.Item, itemToAssign)
+			s.Equal(currentAssignment.Quantity, test.quantity)
+			s.Equal(currentAssignment.Unit, test.unit)
 
-		expectedLength++
+			expectedLength++
+		})
 	}
 }
 
-func TestStore_GetAvailableQuantityForItem(t *testing.T) {
-	store := NewStore("fridge")
+func (s *storeTestSuite) TestStore_GetAvailableQuantityForItem() {
+	storeFixture := store.NewStore("fridge")
 	tests := []struct {
 		itemName string
 		unit     assignment.Unit
@@ -75,91 +74,84 @@ func TestStore_GetAvailableQuantityForItem(t *testing.T) {
 		{"drink", "bottle", 10},
 	}
 
-	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem(fixture.itemName)
+	for _, test := range tests {
+		s.Run(test.itemName, func() {
+			itemToAssign, err := item.NewItem(test.itemName)
 
-		if err != nil {
-			t.Errorf("Expected no error on item creation, but got %s error", err.Error())
-		}
+			s.Require().NoError(err)
 
-		store.AssignItem(itemToAssign, fixture.unit, fixture.quantity)
-		availableQuantity := store.GetAvailableQuantityForItem(itemToAssign)
+			storeFixture.AssignItem(itemToAssign, test.unit, test.quantity)
+			availableQuantity := storeFixture.GetAvailableQuantityForItem(itemToAssign)
 
-		if availableQuantity != fixture.quantity {
-			t.Errorf("Expected available quantity %d, but got %d", fixture.quantity, availableQuantity)
-		}
+			s.Equal(test.quantity, availableQuantity)
+		})
 	}
 }
 
-func TestStore_GetAvailableQuantityForItem_InvalidItem(t *testing.T) {
-	store := NewStore("fridge")
+func (s *storeTestSuite) TestStore_GetAvailableQuantityForItem_InvalidItem() {
+	storeFixture := store.NewStore("fridge")
 	theUnknownItem, err := item.NewItem("The Unknown")
 
-	if err != nil {
-		t.Errorf("Expected no error on item creation, but got %s error", err.Error())
-	}
+	s.Require().NoError(err)
 
-	availableQuantity := store.GetAvailableQuantityForItem(theUnknownItem)
+	availableQuantity := storeFixture.GetAvailableQuantityForItem(theUnknownItem)
 
-	if availableQuantity != 0 {
-		t.Errorf("Expected available quantity 0, but got %d", availableQuantity)
-	}
+	s.Empty(availableQuantity)
 }
 
-func TestStore_Uptake_ValidQuantities(t *testing.T) {
-	store := NewStore("fridge")
+func (s *storeTestSuite) TestStore_Uptake_ValidQuantities() {
+	storeFixture := store.NewStore("fridge")
 	tests := []struct {
+		itemName      string
 		quantity      assignment.Quantity
 		nbAssignments uint
 		nbToUptake    assignment.Quantity
 	}{
-		{5, 2, 10},
-		{4, 3, 6},
+		{"uptakesAll", 5, 2, 10},
+		{"updatesHalf", 4, 3, 6},
 	}
 
-	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem("myItem")
-		expectedRemainingQuantity := assignment.Quantity(
-			(uint(fixture.quantity) * fixture.nbAssignments) - uint(fixture.nbToUptake),
-		)
+	for _, test := range tests {
+		s.Run(test.itemName, func() {
+			itemToAssign, err := item.NewItem(test.itemName)
 
-		for i := uint(0); i < fixture.nbAssignments; i++ {
-			store.AssignItem(itemToAssign, "unit", fixture.quantity)
-		}
+			s.Require().NoError(err)
 
-		remainingQuantity, err := store.Uptake(itemToAssign, fixture.nbToUptake)
+			expectedRemainingQuantity := assignment.Quantity((uint(test.quantity) * test.nbAssignments) - uint(test.nbToUptake))
 
-		if err != nil {
-			t.Errorf("Expected no error on uptake, but got %s error", err.Error())
-		}
+			for i := uint(0); i < test.nbAssignments; i++ {
+				storeFixture.AssignItem(itemToAssign, "unit", test.quantity)
+			}
 
-		if remainingQuantity != expectedRemainingQuantity {
-			t.Errorf("Expected remaining quantity %d, but got %d", expectedRemainingQuantity, remainingQuantity)
-		}
+			remainingQuantity, err := storeFixture.Uptake(itemToAssign, test.nbToUptake)
+
+			s.Equal(expectedRemainingQuantity, remainingQuantity)
+		})
 	}
 }
 
-func TestStore_Uptake_InvalidQuantities(t *testing.T) {
-	store := NewStore("fridge")
+func (s *storeTestSuite) TestStore_Uptake_InvalidQuantities() {
+	storeFixture := store.NewStore("fridge")
 	tests := []struct {
+		itemName      string
 		quantity      assignment.Quantity
 		nbAssignments uint
 		nbToUptake    assignment.Quantity
 	}{
-		{5, 2, 15},
+		{"uptakesMoreThanAvailable", 5, 2, 15},
 	}
 
-	for _, fixture := range tests {
-		itemToAssign, err := item.NewItem("myItem")
+	for _, test := range tests {
+		s.Run(test.itemName, func() {
+			itemToAssign, err := item.NewItem(test.itemName)
 
-		for i := uint(0); i < fixture.nbAssignments; i++ {
-			store.AssignItem(itemToAssign, "unit", fixture.quantity)
-		}
+			for i := uint(0); i < test.nbAssignments; i++ {
+				storeFixture.AssignItem(itemToAssign, "unit", test.quantity)
+			}
 
-		_, err = store.Uptake(itemToAssign, fixture.nbToUptake)
+			_, err = storeFixture.Uptake(itemToAssign, test.nbToUptake)
 
-		if err == nil {
-			t.Errorf("Expected error on uptake, but got no error")
-		}
+			s.Require().Error(err)
+		})
 	}
 }

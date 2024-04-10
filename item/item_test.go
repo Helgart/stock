@@ -1,6 +1,7 @@
-package item
+package item_test
 
 import (
+	"github.com/Helgart/stock/item"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -22,10 +23,10 @@ func (s *itemTestSuite) TestItemCreation() {
 	}
 
 	for _, fixture := range tests {
-		item, err := NewItem(fixture)
+		fixture, err := item.NewItem(fixture)
 
 		s.Require().NoError(err)
-		s.Equal(fixture, item.Name)
-		s.NotEqual(item.Uid, uuid.Nil)
+		s.Equal(fixture, fixture.Name)
+		s.NotEqual(fixture.Uid, uuid.Nil)
 	}
 }
