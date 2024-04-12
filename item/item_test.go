@@ -1,6 +1,7 @@
 package item_test
 
 import (
+	"errors"
 	"github.com/Helgart/stock/item"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
@@ -21,12 +22,29 @@ func (s *itemTestSuite) TestItemCreation() {
 		"ham",
 		"bread",
 	}
+	generatedUuid, err := uuid.NewUUID()
+
+	s.Require().NoError(err)
+
+	provider := func() (uuid.UUID, error) {
+		return generatedUuid, nil
+	}
 
 	for _, fixture := range tests {
-		fixture, err := item.NewItem(fixture)
+		fixtureItem, err := item.NewItem(fixture, provider)
 
 		s.Require().NoError(err)
-		s.Equal(fixture, fixture.Name)
-		s.NotEqual(fixture.Uid, uuid.Nil)
+		s.Equal(fixture, fixtureItem.Name)
+		s.Equal(fixtureItem.Uid, generatedUuid)
 	}
+}
+
+func (s *itemTestSuite) TestItemCreationWithMockError() {
+	provider := func() (uuid.UUID, error) {
+		return uuid.UUID{}, errors.New("mock error")
+	}
+
+	_, err := item.NewItem("Bread", provider)
+
+	s.Require().Error(err)
 }
